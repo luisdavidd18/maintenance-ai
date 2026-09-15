@@ -1,44 +1,39 @@
+import json
 import requests
 
 print("\n🔧 AI Maintenance Copilot")
 print("-------------------------")
 
-failure = input(
-    "\nDescribe the equipment failure:\n> "
-)
+failure = input("\nDescribe the equipment failure:\n> ")
 
 prompt = f"""
 You are an industrial reliability engineering assistant.
 
-Analyze the following equipment failure:
+Analyze this equipment failure:
 
 {failure}
 
-Your job is to assist a maintenance engineer, not replace one.
+Return ONLY valid JSON using exactly this structure:
 
-Return:
+{{
+  "probable_causes": [
+    {{
+      "cause": "string",
+      "reason": "string"
+    }}
+  ],
+  "immediate_checks": ["string"],
+  "safety_considerations": ["string"],
+  "data_to_collect": ["string"],
+  "rca_questions": ["string"]
+}}
 
-1. PROBABLE CAUSES
-Rank the most plausible causes from highest to lowest probability.
-Explain why each cause fits the available evidence.
-
-2. IMMEDIATE TROUBLESHOOTING
-Give specific checks a maintenance technician should perform.
-
-3. SAFETY
-Identify relevant electrical, mechanical, thermal, pressure,
-stored-energy, or lockout/tagout concerns.
-
-4. DATA TO COLLECT
-Identify measurements or observations that would help distinguish
-between possible causes.
-
-5. ROOT CAUSE QUESTIONS
-Provide questions that should be answered during an RCA investigation.
-
-Clearly distinguish facts from hypotheses.
-Do not invent measurements.
-Do not claim certainty when evidence is insufficient.
+Rules:
+- Do not add markdown.
+- Do not add commentary before or after the JSON.
+- Do not invent measurements.
+- Clearly separate evidence from hypotheses.
+- Keep the response concise and technically useful.
 """
 
 response = requests.post(
@@ -47,12 +42,43 @@ response = requests.post(
         "model": "qwen2.5:1.5b",
         "prompt": prompt,
         "stream": False,
+        "format": "json",
+        "options": {
+            "num_predict": 500
+        }
     },
 )
 
 response.raise_for_status()
 
-data = response.json()
+raw_output = response.json()["response"]
 
-print("\n🤖 ANALYSIS\n")
-print(data["response"])
+try:
+    result = json.loads(raw_output)
+except json.JSONDecodeError:
+    print("\nThe model returned invalid JSON.")
+    print("\nRaw response:\n")
+    print(raw_output)
+    raise
+
+print("\n🤖 STRUCTURED ANALYSIS\n")
+
+print("PROBABLE CAUSES")
+for item in result["probable_causes"]:
+    print(f"- {item['cause']}: {item['reason']}")
+
+print("\nIMMEDIATE CHECKS")
+for item in result["immediate_checks"]:
+    print(f"- {item}")
+
+print("\nSAFETY CONSIDERATIONS")
+for item in result["safety_considerations"]:
+    print(f"- {item}")
+
+print("\nDATA TO COLLECT")
+for item in result["data_to_collect"]:
+    print(f"- {item}")
+
+print("\nRCA QUESTIONS")
+for item in result["rca_questions"]:
+    print(f"- {item}")
