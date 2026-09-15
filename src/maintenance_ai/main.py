@@ -45,6 +45,23 @@ Safety requirements:
 - Never say "no special safety considerations" for industrial machinery.
 - If information is insufficient, state what safety conditions must be verified.
 
+Diagnostic reasoning requirements:
+- Generate multiple plausible failure modes from the symptoms provided.
+- Do not anchor on one cause unless the evidence clearly supports it.
+- For each probable cause, explain:
+  1. Why it fits the symptom
+  2. What evidence would confirm it
+  3. What evidence would make it less likely
+- Include mechanical, electrical, process, material, and operating-condition causes when relevant.
+- Do not assume components are functioning correctly just because the machine is operating.
+- Do not invent machine design details that were not provided.
+
+RCA question requirements:
+- Ask questions that help eliminate or confirm competing hypotheses.
+- Focus on differences between stations, machine speed, load, timing, temperature,
+  vibration, noise, recent maintenance, repeatability, and operating conditions.
+- Avoid vague questions such as "What happened?" or "What is the root cause?"
+"""
 response = requests.post(
     "http://localhost:11434/api/generate",
     json={
